@@ -26,7 +26,7 @@
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/tu-usuario/ESCOMeter2.git
+   git clone https://github.com/SunemAyala/ESCOMeter.git
    ```
 2. **Abrir en Android Studio:** Importa el proyecto y deja que Gradle sincronice las dependencias.
 3. **Hardware:**
@@ -34,10 +34,3 @@
    - El baudrate predeterminado es **9600**.
 4. **Ejecutar:** Compila y despliega en tu dispositivo Android.
 
-## 📱 Capturas de Pantalla
-
-*(Próximamente)*
-
-## 🛡️ Licencia
-
-Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para más detalles.
