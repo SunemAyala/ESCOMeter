@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.escometer"
-    compileSdk = 36 // 🔥 MÁS ESTABLE
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.escometer"
@@ -28,7 +28,7 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17 // 🔥 actualizado
+        sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
@@ -53,9 +53,14 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+
+    // 🔥 Material 3
     implementation(libs.androidx.compose.material3)
 
-    // 🔥 ViewModel en Compose (esto arregla tu error)
+    // 🔥 ICONOS (SOLUCIONA TU ERROR)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // 🔥 ViewModel Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
 
     // 🔌 SERIAL USB
@@ -74,6 +79,7 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 
+    // 🔹 Debug
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

@@ -15,22 +15,73 @@ import com.example.escometer.viewmodel.MultimeterViewModel
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.core.entry.entryModelOf
+import java.util.Locale
 
 enum class Mode(val label: String, val unit: String, val color: Color) {
     VOLTAGE("Voltaje", "V", Color(0xFF00E676)),
     CURRENT("Corriente", "A", Color(0xFFFF5252)),
-    RESISTANCE("Resistencia", "Ω", Color(0xFF40C4FF))
+    RESISTANCE("Resistencia", "Ω", Color(0xFF40C4FF)),
+    POWER("Potencia", "W", Color(0xFFFFC107))
 }
 
 @Composable
 fun MultimeterScreen(viewModel: MultimeterViewModel) {
 
-    val dataPoints by viewModel.dataPoints.collectAsState()
-    val currentValue = dataPoints.lastOrNull() ?: 0f
+    val voltage: List<Float> by viewModel.voltageData.collectAsState(initial = emptyList())
+    val current: List<Float> by viewModel.currentData.collectAsState(initial = emptyList())
+    val resistance: List<Float> by viewModel.resistanceData.collectAsState(initial = emptyList())
+    val power: List<Float> by viewModel.powerData.collectAsState(initial = emptyList())
+
+    val errorMessage: String? by viewModel.errorFlow.collectAsState(initial = null)
 
     var mode by remember { mutableStateOf(Mode.VOLTAGE) }
 
+    val dataPoints: List<Float> = when (mode) {
+        Mode.VOLTAGE -> voltage
+        Mode.CURRENT -> current
+        Mode.RESISTANCE -> resistance
+        Mode.POWER -> power
+    }
+
+    val currentValue = dataPoints.lastOrNull() ?: 0f
     val color = mode.color
+
+    // 🔥 ALERTAS INTELIGENTES
+    val alert = remember(currentValue, mode) {
+        when (mode) {
+            Mode.VOLTAGE -> {
+                when {
+                    currentValue > 5f -> "⚠️ Sobrevoltaje"
+                    currentValue < 1f -> "⚠️ Voltaje muy bajo"
+                    else -> null
+                }
+            }
+
+            Mode.CURRENT -> {
+                when {
+                    currentValue > 2f -> "⚠️ Sobrecorriente"
+                    currentValue < 0.1f -> "⚠️ Corriente muy baja"
+                    else -> null
+                }
+            }
+
+            Mode.RESISTANCE -> {
+                when {
+                    currentValue > 1_000_000 -> "⚠️ Resistencia muy alta"
+                    currentValue < 10 -> "⚠️ Posible corto circuito"
+                    else -> null
+                }
+            }
+
+            Mode.POWER -> {
+                when {
+                    currentValue > 10f -> "⚠️ Alta potencia"
+                    currentValue > 20f -> "🚨 Riesgo eléctrico"
+                    else -> null
+                }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFF0A0F14)
@@ -44,7 +95,7 @@ fun MultimeterScreen(viewModel: MultimeterViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // 🔥 HEADER
+            // HEADER
             Text(
                 text = "ESCOMeter",
                 style = MaterialTheme.typography.headlineMedium,
@@ -52,12 +103,12 @@ fun MultimeterScreen(viewModel: MultimeterViewModel) {
                 fontWeight = FontWeight.Bold
             )
 
-            // 🎛 SELECTOR
+            // SELECTOR
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Mode.values().forEach {
+                Mode.entries.forEach {
                     ModeButton(
                         text = it.label,
                         selected = it == mode,
@@ -67,7 +118,17 @@ fun MultimeterScreen(viewModel: MultimeterViewModel) {
                 }
             }
 
-            // 🔢 DISPLAY PRO
+            // ⚠️ ALERTA DE SISTEMA (errores)
+            errorMessage?.let {
+                AlertCard(it, Color.Red)
+            }
+
+            // 🚨 ALERTA DE MEDICIÓN
+            alert?.let {
+                AlertCard(it, Color(0xFFFFA000))
+            }
+
+            // DISPLAY
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -94,7 +155,7 @@ fun MultimeterScreen(viewModel: MultimeterViewModel) {
                 }
             }
 
-            // 📊 GRÁFICA PRO (simple pero limpia)
+            // GRÁFICA
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,7 +169,9 @@ fun MultimeterScreen(viewModel: MultimeterViewModel) {
 
                     if (dataPoints.isNotEmpty()) {
 
-                        val model = entryModelOf(*dataPoints.toTypedArray())
+                        val model = entryModelOf(
+                            *dataPoints.takeLast(120).toTypedArray()
+                        )
 
                         Chart(
                             chart = lineChart(),
@@ -129,7 +192,25 @@ fun MultimeterScreen(viewModel: MultimeterViewModel) {
     }
 }
 
-// 🔘 BOTÓN
+// 🔥 COMPONENTE DE ALERTA
+@Composable
+fun AlertCard(text: String, color: Color) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.2f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = text,
+            color = color,
+            modifier = Modifier.padding(12.dp),
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+// BOTÓN
 @Composable
 fun ModeButton(
     text: String,
@@ -154,16 +235,17 @@ fun ModeButton(
     }
 }
 
-// 🧠 FORMATO
+// FORMATO
 fun formatValue(value: Float, mode: Mode): String {
     return when (mode) {
-        Mode.VOLTAGE -> String.format("%.2f V", value)
-        Mode.CURRENT -> String.format("%.3f A", value)
+        Mode.VOLTAGE -> String.format(Locale.US, "%.2f V", value)
+        Mode.CURRENT -> String.format(Locale.US, "%.3f A", value)
+        Mode.POWER -> String.format(Locale.US, "%.2f W", value)
         Mode.RESISTANCE -> {
             when {
-                value > 1_000_000 -> String.format("%.2f MΩ", value / 1_000_000)
-                value > 1_000 -> String.format("%.2f kΩ", value / 1_000)
-                else -> String.format("%.2f Ω", value)
+                value > 1_000_000 -> String.format(Locale.US, "%.2f MΩ", value / 1_000_000)
+                value > 1_000 -> String.format(Locale.US, "%.2f kΩ", value / 1_000)
+                else -> String.format(Locale.US, "%.2f Ω", value)
             }
         }
     }
