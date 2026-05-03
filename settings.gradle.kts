@@ -20,7 +20,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://jitpack.io") // 🔥 ESTO FALTABA
+        maven("https://jitpack.io")
     }
 }
 
