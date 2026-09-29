@@ -27,6 +27,6 @@ Para información detallada sobre el funcionamiento técnico y la implementació
 ## 📋 Requisitos de Uso
 - Dispositivo con Android 8.0+ y soporte USB OTG.
 - Hardware externo compatible que envíe tramas JSON por serial a 9600 bps.
-
+- internet
 ---
 *Proyecto desarrollado para la comunidad de ESCOM.*
